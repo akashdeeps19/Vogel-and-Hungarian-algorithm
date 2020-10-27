@@ -4,8 +4,11 @@ import numpy as np
 class Hungarian:
     def __init__(self, matrix):
         self.cost_matrix = matrix
+        self.input_matrix = [[e for e in row] for row in matrix]
         self.pad_matrix(0)
-        self.size = len(self.cost_matrix)
+        self.size = (len(self.cost_matrix), len(self.cost_matrix[0]))
+        self.results = []
+        self.totalPotential = 0
 
     def pad_matrix(self, x):
         r = len(self.cost_matrix)
@@ -16,31 +19,236 @@ class Hungarian:
                 self.cost_matrix[i].append(x)
 
     def sub_min_from_row(self):
-        for i in range(self.size):
+        for i in range(self.size[0]):
             m = min(self.cost_matrix[i])
-            for j in range(self.size):
+            for j in range(self.size[1]):
                 self.cost_matrix[i][j] -= m
     
     def sub_min_from_col(self):
-        for i in range(self.size):
+        for i in range(self.size[1]):
             m = math.inf
-            for j in range(self.size):
+            for j in range(self.size[0]):
                 m = min(m,self.cost_matrix[j][i])
 
-            for j in range(self.size):
+            for j in range(self.size[0]):
                 self.cost_matrix[j][i] -= m
 
+    def get_lines(self):
+
+        total_covered = 0
+        cover_zeros = CoverZeros(self.cost_matrix)
+        covered_rows = cover_zeros.get_covered_rows()
+        covered_columns = cover_zeros.get_covered_columns()
+        total_covered = len(covered_rows) + len(covered_columns)
+
+        return total_covered, covered_rows, covered_columns
+
+    def sub_min_from_matrix(self, covered_rows, covered_columns):
+        
+        elements = []
+
+        for row_index, row in enumerate(self.cost_matrix):
+            if row_index not in covered_rows:
+                for index, element in enumerate(row):
+                    if index not in covered_columns:
+                        elements.append(element)
+                        
+        min_uncovered_num = min(elements)
+
+        uncovered_rows = []
+        for index in range(self.size[0]):
+            if index not in covered_rows:
+                uncovered_rows.append(index)
+
+        for row in uncovered_rows:
+            for i in range(self.size[1]):
+                self.cost_matrix[row][i] -= min_uncovered_num
+
+        for column in covered_columns:
+            for i in range(self.size[0]):
+                self.cost_matrix[i][column] += min_uncovered_num
+
+        
+
+    def step5(self, total_lines, covered_rows, covered_columns):
+
+        while total_lines < self.size[0]:
+            self.sub_min_from_matrix(covered_rows, covered_columns)
+            total_lines, covered_rows, covered_columns = self.get_lines()
+            print(self.cost_matrix)
+
+        return total_lines, covered_rows, covered_columns
+
+
     def solve(self):
+
+        #Step - 1
         self.sub_min_from_row()
+
+        #Step - 2
         self.sub_min_from_col()
+
+        #Step - 3
+        total_lines, covered_rows, covered_columns = self.get_lines()
+
+        print(self.cost_matrix)
+        print(covered_rows, covered_columns)
+        #Step - 4
+        if total_lines < self.size[0]:
+            #Step - 5
+            self.step5(total_lines, covered_rows, covered_columns)
+
+        required = min(self.size[0], self.size[1])
+
+        zeroes = [[False]*self.size[1] for i in range(self.size[0])]
+        for i in range(self.size[0]):
+            for j in range(self.size[1]):
+                if self.cost_matrix[i][j] == 0:
+                    zeroes[i][j] = True
+        
+        while len(self.results) != required:
+
+            flag = True
+            for i in range(self.size[0]):
+                for j in range(self.size[1]):
+                    if self.cost_matrix[i][j] == 0:
+                        flag = False
+                        break
+            
+            if flag:
+                print("Algorithm couldn't find results for the given input")
+
+            matched_rows, matched_columns = self.find_matches(zeroes)
+
+            total_matched = len(matched_rows) + len(matched_columns)
+
+            if total_matched == 0:
+                matched_rows, matched_columns = self.select_arbitrary_match(zeroes)
+
+            # Delete rows and columns
+            for row in matched_rows:
+                for i in range(len(zeroes[row])):
+                    zeroes[row][i] = False
+
+            for column in matched_columns:
+                for i in range(len(zeroes)):
+                    zeroes[i][column] = False
+
+            # Save Results
+            self.save_results(zip(matched_rows, matched_columns))
+
+        # Calculate total potential
+        value = 0
+        print(self.input_matrix)
+        for (row, column) in self.results:
+            
+            value += self.input_matrix[row][column]
+
+        self.totalPotential = value
+
+    def transpose(self, matrix):
+
+        matrix_t = [[0]*len(matrix) for i in range(len(matrix[0]))]
+
+        for i, row in enumerate(matrix):
+            for j, ele in enumerate(row):
+                matrix_t[j][i] = ele 
+
+        return matrix_t
+            
+    def find_matches(self, zeroes):
+
+        marked_rows = []
+        marked_columns = []
+
+        # Mark rows and columns with matches
+        for index, row in enumerate(zeroes):
+            row_index = [index]
+            if sum([int(e) for e in row]) == 1:
+                for idx, col in enumerate(row):
+                    if col == True:
+                        column_index = [idx]
+
+                marked_rows, marked_columns = self.mark_rows_and_columns(marked_rows, marked_columns, row_index,
+                                                                           column_index)
+
+      
+        zeroes_t = self.transpose(zeroes)
+
+        for index, column in enumerate(zeroes_t):
+            column_index = [index]
+            if sum([int(e) for e in column]) == 1:
+                for idx, row in enumerate(column):
+                    if row == True:
+                        row_index = [idx]
+
+                marked_rows, marked_columns = self.mark_rows_and_columns(marked_rows, marked_columns, row_index,
+                                                                           column_index)
+
+        return marked_rows, marked_columns
+
+
+    def mark_rows_and_columns(self, marked_rows, marked_columns, row_index, column_index):
+       
+        new_marked_rows = marked_rows
+        new_marked_columns = marked_columns
+
+        row_flag = len(marked_rows) == 0 and len(row_index) == 0
+        for i in range(min(len(marked_rows),len(row_index) == 0)):
+            if marked_rows[i] == row_index[i]:
+                row_flag = True
+                break
+
+        col_flag = len(marked_columns) == 0 and len(column_index) == 0
+        for i in range(min(len(marked_columns),len(column_index) == 0)):
+            if marked_columns[i] == column_index[i]:
+                col_flag = True
+                break
+
+        if row_flag and col_flag:
+            new_marked_rows = marked_rows + row_index
+            new_marked_columns = marked_columns + column_index
+
+        return new_marked_rows, new_marked_columns       
+
+
+    def select_arbitrary_match(self, zeroes):
+
+        rows = []
+        columns = []
+        for i,row in enumerate(zeroes):
+            for j, ele in enumerate(row):
+                if ele == True:
+                    rows.append(i)
+                    columns.append(j)
+
+        zeroes_t = self.transpose(zeroes)
+    
+        zero_count = []
+        for index, row in enumerate(rows):
+            total_zeros = sum([int(e) for e in zeroes[row]]) + sum([int(e) for e in zeroes_t[columns[index]]])
+            zero_count.append(total_zeros)
+
+    
+        indices = zero_count.index(min(zero_count))
+        row = [rows[indices]]
+        column = [columns[indices]]
+
+        return row, column
+        
+    def save_results(self, result_lists):
+        
+        for result in result_lists:
+            row, column = result
+
+            if row < self.size[0] and column < self.size[1]:
+                new_result = (int(row), int(column))
+                self.results.append(new_result)
+
 
 class CoverZeros:
 
     def __init__(self, matrix):
-        """
-        Input a matrix and save it as a boolean matrix to designate zero locations.
-        Run calculation procedure to generate results.
-        """
         matrix = np.array(matrix)
         # Find zeros in matrix
         self._zero_locations = (matrix == 0)
@@ -177,10 +385,6 @@ class CoverZeros:
         return None
 
     def __find_best_choice_row_and_new_column(self, choice_column_index):
-        """
-        Find a row index to use for the choice so that the column that needs to be changed is optimal.
-        Return a random row and column if unable to find an optimal selection.
-        """
         row_indices, = np.where(self._zero_locations[:, choice_column_index])
         for row_index in row_indices:
             column_indices, = np.where(self._choices[row_index])
@@ -211,5 +415,7 @@ print(mat)
 h = Hungarian(mat)
 h.solve()
 print(h.cost_matrix)
-cz = CoverZeros(h.cost_matrix)
-print(len(cz.get_covered_columns()) + len(cz.get_covered_rows()))
+print(h.results)
+print(h.totalPotential)
+# cz = CoverZeros(h.cost_matrix)
+# print(len(cz.get_covered_columns()) + len(cz.get_covered_rows()))
