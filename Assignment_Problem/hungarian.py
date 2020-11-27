@@ -75,7 +75,7 @@ class Hungarian:
         while total_lines < self.size[0]:
             self.sub_min_from_matrix(covered_rows, covered_columns)
             total_lines, covered_rows, covered_columns = self.get_lines()
-            print(self.cost_matrix)
+            # print(self.cost_matrix)
 
         return total_lines, covered_rows, covered_columns
 
@@ -91,8 +91,8 @@ class Hungarian:
         #Step - 3
         total_lines, covered_rows, covered_columns = self.get_lines()
 
-        print(self.cost_matrix)
-        print(covered_rows, covered_columns)
+        # print(self.cost_matrix)
+        # print(covered_rows, covered_columns)
         #Step - 4
         if total_lines < self.size[0]:
             #Step - 5
@@ -139,7 +139,7 @@ class Hungarian:
 
         # Calculate total potential
         value = 0
-        print(self.input_matrix)
+        # print(self.input_matrix)
         for (row, column) in self.results:
             
             value += self.input_matrix[row][column]
@@ -401,22 +401,22 @@ class CoverZeros:
         return row_indices[0], column_index[0]
 
 
+if __name__ == "__main__":
 
+    # mat = [[250, 400, 350],
+    #        [400, 600, 350],
+    #        [200, 400, 250]]
 
-# mat = [[250, 400, 350],
-#        [400, 600, 350],
-#        [200, 400, 250]]
+    mat = [[90, 75, 75, 80],
+        [35, 85, 55, 65],
+        [125, 95, 90, 105],
+        [45, 110, 95, 115]]
 
-mat = [[90, 75, 75, 80],
-       [35, 85, 55, 65],
-       [125, 95, 90, 105],
-       [45, 110, 95, 115]]
-
-print(mat)
-h = Hungarian(mat)
-h.solve()
-print(h.cost_matrix)
-print(h.results)
-print(h.totalPotential)
-# cz = CoverZeros(h.cost_matrix)
-# print(len(cz.get_covered_columns()) + len(cz.get_covered_rows()))
+    print(mat)
+    h = Hungarian(mat)
+    h.solve()
+    print(h.cost_matrix)
+    print(h.results)
+    print(h.totalPotential)
+    # cz = CoverZeros(h.cost_matrix)
+    # print(len(cz.get_covered_columns()) + len(cz.get_covered_rows()))
