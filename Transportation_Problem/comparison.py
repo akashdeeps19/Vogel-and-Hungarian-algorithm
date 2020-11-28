@@ -51,7 +51,6 @@ iranks=[[0 for _ in range (4)] for _ in range(4)]
 
 
 for algo in range(4):
-
 	for rank in range(1,5):
 		num=0
 		for i in range(640):
@@ -62,7 +61,6 @@ for algo in range(4):
 integrated_ranks=[0 for _ in range(4)]
 
 for algo in range(4):
-
 	integrated_ranks[algo] = (iranks[algo][0] + iranks[algo][1]*2 + iranks[algo][2]*3 + iranks[algo][3]*4)/640
 
 print(iranks)
