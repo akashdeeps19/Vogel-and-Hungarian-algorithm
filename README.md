@@ -2,6 +2,4 @@ Implementation of Vogel Approximation Method for transportation problem and Hung
 
 Usage  
 
-
-`cd src`  
-'bash run.sh'
+`bash run.sh`
