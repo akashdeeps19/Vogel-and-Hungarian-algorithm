@@ -2,6 +2,6 @@ Implementation of Vogel Approximation Method for transportation problem and Hung
 
 Usage  
 
-`pip install -r requirements.txt`  
+
 `cd src`  
-`python3 main.py`  
+'bash run.sh'
